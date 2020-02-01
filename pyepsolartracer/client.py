@@ -51,7 +51,11 @@ class EPsolarTracerClient:
         ''' Connect to the serial
         :returns: True if connection succeeded, False otherwise
         '''
-        return self.client.connect()
+        cc = self.client.connect()
+        if cc is False:
+            print("Unable to open port. Quitting")
+            quit()
+        return cc
 
     def close(self):
         ''' Closes the underlying connection
@@ -106,12 +110,12 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
 
         #Set this to 1 to allow user to use "Enter" button to control load at the same time as the script running
         self.allow_manual_load_control = kwargs.get('allow_manual_load_control', 0)
-        self.default_load_state = kwargs.get('default_load_state',None)
-        print("Default was ...",self.read_input("Default Load On/Off in manual mode").value)
+        self.default_load_state = kwargs.get('default_load_state', None)
+        print("Default was ...", self.read_input("Default Load On/Off in manual mode").value)
         
 
 
-        self.mqtt_broker_ip = kwargs.get('mqtt_broker_ip','DISABLED')
+        self.mqtt_broker_ip = kwargs.get('mqtt_broker_ip', 'DISABLED')
 
         if self.default_load_state is None:
             if self.read_input("Default Load On/Off in manual mode").value == 1:
@@ -183,4 +187,3 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
         '''
         self.set_load_to_default_load_state()
         return self.client.close()
-

@@ -13,8 +13,10 @@ logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-client = EPsolarTracerClient()
-client.connect()
+client = EPsolarTracerClient(port = 'COM6')
+if client.connect() == False:
+    print("Error. Port not able to be opened")
+
 
 data = []  # New List for Data
 
@@ -71,5 +73,5 @@ client.close()
 
 
 # json.dump(data, outfile)
-jsondata=json.dumps(data)
+jsondata=json.dumps(data,indent=4)
 print(jsondata)

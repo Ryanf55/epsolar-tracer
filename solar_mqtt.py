@@ -10,7 +10,8 @@
 
 from pyepsolartracer.client import EPsolarTracerClientExtended
 import time
-port_name = 'COM1'
+
+port_name = 'COM6'
 
 #MQTT Color Maps
 class rgb_limiter():
@@ -36,13 +37,16 @@ class rgb_limiter():
 
 
 
-#MQTT
+#MQTT -> Assume the broker runs locally
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
 import sys
+import socket  
+hostname = socket.gethostname()    
 
-#broker_address= "10.7.100.87" # Your local computer ip broker if running tests
-broker_address= "192.168.0.180" 
+#Determine broker or not
+#broker_address = socket.gethostbyname(hostname) 
+broker_address = "10.0.0.33"   
 broker_port = 1883
 
 client_name = 'EPEVER Client'
@@ -98,7 +102,7 @@ class mqtt_manager:
         self.mqtt_client.on_message = on_message
         self.mqtt_client.will_set("connection/solar", 255*65536+0*256+0,qos=1,retain=False) #green 0*65536+255*256+0
 
-        self.mqtt_client.loop_start()   
+        self.mqtt_client.loop_start()
         print("Starting Loop")
         
 
@@ -166,49 +170,99 @@ solar_client = EPsolarTracerClientExtended({  'port':port_name,
                                         'default_load_state':0})
 solar_client.connect()
 
-m = mqtt_manager()
-r = rgb_limiter()
+#m = mqtt_manager()
+#r = rgb_limiter()
 
 response = solar_client.read_device_info()
-print("Manufacturer:", repr(response.information[0]))
-print("Model:", repr(response.information[1]))
-print("Version:", repr(response.information[2]))
+while True:
+    try:
+        #print("Manufacturer:", repr(response.information[0]))
+        #print("Model:", repr(response.information[1]))
+        #print("Version:", repr(response.information[2]))
+        print("")
+        print("Battery:")
+        print(solar_client.read_input("Battery SOC"))  # Momentary Percentage of Battery's remaining capacity
+        break
+    except:
+        time.sleep(1)
 
-print("")
-print("Battery:")
-print(solar_client.read_input("Battery SOC"))  # Momentary Percentage of Battery's remaining capacity
+    
+
+
+
+publish_topics = {
+    "solar_voltage" : {
+        "topic":"solar_data/solar_voltage",
+        "register" : "Charging equipment input voltage"
+    },
+    "solar_current": {
+        "topic":"solar_data/solar_voltage",
+        "register" : "Charging equipment input current"
+    },
+    "solar_power" : {
+        "topic":"solar_data/solar_voltage",
+        "register" : "Charging equipment input power"
+    },
+    "battery_voltage" : {
+        "topic":"solar_data/battery_voltage",
+        "register" : "Charging equipment output voltage"
+    },
+    "battery_current" : {
+        "topic":"solar_data/battery_current",
+        "register" : "Charging equipment output current"
+    },
+    "battery_power" : {
+        "topic":"solar_data/battery_power",
+        "register" : "Charging equipment output power"
+    },
+    "load_voltage" : {
+        "topic":"solar_data/load_voltage",
+        "register" : "Discharging equipment output voltage"
+    },
+    "load_current" : {
+        "topic":"solar_data/load_current",
+        "register" : "Discharging equipment output current"
+    },
+    "load_power" : {
+        "topic":"solar_data/load_power",
+        "register" : "Discharging equipment output power"
+    },
+}
 
 
 while True:
     
     try:
-        m.publish_mqtt('solar_data/solar_voltage'   ,solar_client.read_input("Charging equipment input voltage").value)  # Momentary Voltage of PV-Generator
-        m.publish_mqtt('solar_data/solar_current'   ,solar_client.read_input("Charging equipment input current").value)  # Momentary Current of PV-Generator
-        m.publish_mqtt('solar_data/solar_power'     ,solar_client.read_input("Charging equipment input power").value)  # Momentary Power of PV-Generator
-        m.publish_mqtt('solar_data/battery_voltage' ,solar_client.read_input("Charging equipment output voltage").value)  # Momentary Voltage of Battery-Output
-        m.publish_mqtt('solar_data/battery_current' ,solar_client.read_input("Charging equipment output current").value)  # Momentary Current of Battery-Output
-        m.publish_mqtt('solar_data/battery_power'   ,solar_client.read_input("Charging equipment output power").value)  # Momentary Power of Battery-Output
-        m.publish_mqtt('solar_data/load_voltage'    ,solar_client.read_input("Discharging equipment output voltage").value)  # Momentary Voltage of LOAD-Output
-        m.publish_mqtt('solar_data/load_current'    ,solar_client.read_input("Discharging equipment output current").value)  # Momentary Current of LOAD-Output
-        m.publish_mqtt('solar_data/load_power'      ,solar_client.read_input("Discharging equipment output power").value)  # Momentary Power of LOAD-Output
+        for pub_topic in publish_topics:
+            print(solar_client.read_input(publish_topics[pub_topic]["register"]).value)
+            #m.publish_mqtt(publish_topics[pub_topic]["topic"], solar_client.read_input(publish_topics[pub_topic]["register"]).value)
+            # m.publish_mqtt('solar_data/solar_voltage'   ,solar_client.read_input("Charging equipment input voltage").value)  # Momentary Voltage of PV-Generator
+            # m.publish_mqtt('solar_data/solar_current'   ,solar_client.read_input("Charging equipment input current").value)  # Momentary Current of PV-Generator
+            # m.publish_mqtt('solar_data/solar_power'     ,solar_client.read_input("Charging equipment input power").value)  # Momentary Power of PV-Generator
+            # m.publish_mqtt('solar_data/battery_voltage' ,solar_client.read_input("Charging equipment output voltage").value)  # Momentary Voltage of Battery-Output
+            # m.publish_mqtt('solar_data/battery_current' ,solar_client.read_input("Charging equipment output current").value)  # Momentary Current of Battery-Output
+            # m.publish_mqtt('solar_data/battery_power'   ,solar_client.read_input("Charging equipment output power").value)  # Momentary Power of Battery-Output
+            # m.publish_mqtt('solar_data/load_voltage'    ,solar_client.read_input("Discharging equipment output voltage").value)  # Momentary Voltage of LOAD-Output
+            # m.publish_mqtt('solar_data/load_current'    ,solar_client.read_input("Discharging equipment output current").value)  # Momentary Current of LOAD-Output
+            # m.publish_mqtt('solar_data/load_power'      ,solar_client.read_input("Discharging equipment output power").value)  # Momentary Power of LOAD-Output
         
-        # Net Power
-        try:
-            net_power = solar_client.read_input("Charging equipment input power").value - solar_client.read_input("Charging equipment output power").value - solar_client.read_input("Discharging equipment output power").value
-            m.publish_mqtt('solar_data/net_power'       ,net_power)
-        except:
-            print("Error net power calc")
+        # # Net Power
+        # try:
+        #     net_power = solar_client.read_input("Charging equipment input power").value - solar_client.read_input("Charging equipment output power").value - solar_client.read_input("Discharging equipment output power").value
+        #     m.publish_mqtt('solar_data/net_power'       ,net_power)
+        # except:
+        #     print("Error net power calc")
 
-        # Low Battery
-        cur_voltage = solar_client.read_input("Charging equipment output voltage").value
-        try:
-            if cur_voltage < 12.5:
-                print("Low Battery")
-                m.publish_mqtt('solar_data/battery_alert'   ,r.get_rgb(cur_voltage))  # Momentary Voltage of PV-Generator
-            else:
-                m.publish_mqtt('solar_data/battery_alert'   ,r.get_rgb(cur_voltage))
-        except TypeError:
-            pass
+        # # Low Battery
+        # cur_voltage = solar_client.read_input("Charging equipment output voltage").value
+        # try:
+        #     if cur_voltage < 12.5:
+        #         print("Low Battery")
+        #         m.publish_mqtt('solar_data/battery_alert'   ,r.get_rgb(cur_voltage))  # Momentary Voltage of PV-Generator
+        #     else:
+        #         m.publish_mqtt('solar_data/battery_alert'   ,r.get_rgb(cur_voltage))
+        # except TypeError:
+        #     pass
 
 
         time.sleep(5)

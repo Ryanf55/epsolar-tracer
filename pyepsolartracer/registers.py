@@ -17,7 +17,7 @@ def AH():
 def W():
     return [ 'Watt', 'W' ]
 def C():
-    return [ 'degree Celsius', '°C' ] # \0xb0
+    return [ 'degree Celsius', 'ï¿½C' ] # \0xb0
 def PC():
     return [ '%, percentage', '%' ]
 def KWH():
@@ -87,7 +87,7 @@ class Register:
                 #print rawvalue
                 rawvalue = -(rawvalue ^ mask) - 1
             return Value(self, rawvalue)
-        _logger.info ("No value for register " + repr(self.name))
+        _logger.info("No value for register " + repr(self.name))
         return Value(self, None)
 
     def encode(self, value):
@@ -102,7 +102,7 @@ class Coil(Register):
     def decode(self, response):
         if hasattr(response, "bits"):
             return Value(self, response.bits[0])
-        _logger.info ("No value for coil " + repr(self.name))
+        _logger.info("No value for coil " + repr(self.name))
         return Value(self, None)
 
 # LS-B Series Protocol
@@ -427,7 +427,7 @@ Register("Battery Capacity",
   AH, 1 ),
 # Temperature compensation coefficient
 Register("Temperature compensation coefficient",
-  0x9002, "Range 0-9 mV/°C/2V",
+  0x9002, "Range 0-9 mV/ï¿½C/2V",
   I, 100 ),
 # High Volt.disconnect
 Register("High Volt.disconnect",
