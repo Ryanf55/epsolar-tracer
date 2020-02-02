@@ -10,7 +10,6 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.mei_message import *
 from pyepsolartracer.registers import registerByName
 
-import time
 
 
 import logging
@@ -32,6 +31,7 @@ class EPsolarTracerClient:
     def __init__(self, unit=1, serialclient=None, **kwargs):
         ''' Initialize a serial client instance
         '''
+        print("INIT")
         self.unit = unit
         if serialclient is None:
             port = kwargs.get('port', 'COM1')
@@ -42,7 +42,8 @@ class EPsolarTracerClient:
                 stopbits=1,
                 bytesize=8,
                 parity='N',
-                baudrate=baudrate
+                baudrate=baudrate,
+                timeout = 1.0
             )
         else:
             self.client = serialclient
@@ -51,10 +52,14 @@ class EPsolarTracerClient:
         ''' Connect to the serial
         :returns: True if connection succeeded, False otherwise
         '''
+        print("SA: ",self.client.is_socket_open())
         cc = self.client.connect()
+        
         if cc is False:
             print("Unable to open port. Quitting")
             quit()
+
+        print("SB",self.client.is_socket_open())
         return cc
 
     def close(self):
@@ -98,6 +103,14 @@ class EPsolarTracerClient:
             response = True
         return response
 
+    def __enter__(self):
+        self.connect()
+        print("Context connect")
+        return self
+    def __exit__(self,type,value,traceback):
+        self.close()
+        print("Performed close:)")
+
 
 __all__ = [
     "EPsolarTracerClient",
@@ -109,21 +122,22 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
         super().__init__(unit=1, serialclient=None, **kwargs)
 
         #Set this to 1 to allow user to use "Enter" button to control load at the same time as the script running
+        #If left at 0 (defualt), the user will not be able to use the hardware button
         self.allow_manual_load_control = kwargs.get('allow_manual_load_control', 0)
         self.default_load_state = kwargs.get('default_load_state', None)
-        print("Default was ...", self.read_input("Default Load On/Off in manual mode").value)
+        previous_load_state =  self.read_input("Default Load On/Off in manual mode").value
         
 
-
+        #Todo add in mqtt functionality here instead
         self.mqtt_broker_ip = kwargs.get('mqtt_broker_ip', 'DISABLED')
 
         if self.default_load_state is None:
             if self.read_input("Default Load On/Off in manual mode").value == 1:
                 self.default_load_state = 1
-                print("Default Load is on. Setting test mode state to on.")
+                print("Default Load in manual mode on. Setting test mode state to on.")
             else:
                 self.default_load_state = 0
-                print("Default Load is off. Setting test mode state to off.")
+                print("Default Load in manual mode is off. Setting test mode state to off.")
         else:
             self.set_default_load_state(self.default_load_state)
         
@@ -166,16 +180,16 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
         self.write_load_state(self.default_load_state)
 
     def _write_load_test_mode_enabled(self,load_test_mode_enabled):
-        if load_test_mode_enabled == 1:
+        if load_test_mode_enabled == 1: #user button controllable
             self.write_output("Enable load test mode",1)
-        elif load_test_mode_enabled == 0:
+        elif load_test_mode_enabled == 0: #remote only
             self.write_output("Enable load test mode",0)
         else:
             print("Error. Unsupported load test mode")
 
     
     def set_default_load_state(self,default_load_state):
-        if default_load_state == 1:
+        if default_load_state == 1: 
             self.write_output("Default Load On/Off in manual mode",1)
         elif default_load_state == 0:
             self.write_output("Default Load On/Off in manual mode",0)
@@ -187,3 +201,6 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
         '''
         self.set_load_to_default_load_state()
         return self.client.close()
+
+
+
