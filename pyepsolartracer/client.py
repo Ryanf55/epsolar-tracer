@@ -31,6 +31,7 @@ class EPsolarTracerClient:
     def __init__(self, unit=1, serialclient=None, **kwargs):
         ''' Initialize a serial client instance
         '''
+        print("INIT")
         self.unit = unit
         if serialclient is None:
             port = kwargs.get('port', 'COM1')
@@ -51,12 +52,21 @@ class EPsolarTracerClient:
         ''' Connect to the serial
         :returns: True if connection succeeded, False otherwise
         '''
+        print("SA: ",self.client.is_socket_open())
         cc = self.client.connect()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 9d631ca34d5fb61711bd400677cb2050701c983f
         if cc is False:
             print("Unable to open port. Quitting")
             quit()
 
+<<<<<<< HEAD
+=======
+        print("SB",self.client.is_socket_open())
+>>>>>>> 9d631ca34d5fb61711bd400677cb2050701c983f
         return cc
 
     def close(self):
@@ -123,8 +133,13 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
         self.allow_manual_load_control = kwargs.get('allow_manual_load_control', 0)
         self.default_load_state = kwargs.get('default_load_state', None)
         previous_load_state =  self.read_input("Default Load On/Off in manual mode").value
+<<<<<<< HEAD
 
 
+=======
+        
+
+>>>>>>> 9d631ca34d5fb61711bd400677cb2050701c983f
         #Todo add in mqtt functionality here instead
         self.mqtt_broker_ip = kwargs.get('mqtt_broker_ip', 'DISABLED')
 
@@ -186,7 +201,7 @@ class EPsolarTracerClientExtended(EPsolarTracerClient):
 
 
     def set_default_load_state(self,default_load_state):
-        if default_load_state == 1:
+        if default_load_state == 1: 
             self.write_output("Default Load On/Off in manual mode",1)
         elif default_load_state == 0:
             self.write_output("Default Load On/Off in manual mode",0)

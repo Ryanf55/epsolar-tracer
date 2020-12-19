@@ -12,6 +12,10 @@ from pyepsolartracer.client import EPsolarTracerClientExtended
 import time
 
 PORT_NAME = '/dev/ttyUSB0'
+<<<<<<< HEAD
+=======
+print("A")
+>>>>>>> 9d631ca34d5fb61711bd400677cb2050701c983f
 
 #MQTT Color Maps
 class rgb_limiter():
@@ -191,7 +195,6 @@ with  EPsolarTracerClientExtended(port = PORT_NAME,
 
 
 
-
     publish_topics = {
         "solar_voltage" : {
             "topic":"solar_data/solar_voltage",
@@ -233,7 +236,6 @@ with  EPsolarTracerClientExtended(port = PORT_NAME,
 
 
     while True:
-
 
         for pub_topic in publish_topics:
             print("Scanning TOpic:",pub_topic)
