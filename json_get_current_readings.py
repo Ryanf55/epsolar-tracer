@@ -13,7 +13,7 @@ logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-client = EPsolarTracerClient(port = 'COM6')
+client = EPsolarTracerClient(port = '/dev/ttyUSB0')
 if client.connect() == False:
     print("Error. Port not able to be opened")
 

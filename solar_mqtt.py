@@ -11,14 +11,14 @@
 from pyepsolartracer.client import EPsolarTracerClientExtended
 import time
 
-port_name = 'COM6'
+PORT_NAME = '/dev/ttyUSB0'
 
 #MQTT Color Maps
 class rgb_limiter():
     def __init__(self):
         self.max_v = 14
         self.min_v = 12
- 
+
         self.max_r = 255
         self.min_r = 0
         self.max_g = 255
@@ -30,7 +30,7 @@ class rgb_limiter():
         r_val = self.clamp(round((1 - v_scale)* (self.max_r - self.min_r) + self.min_r),self.min_r,self.max_r)
         g_val = self.clamp(round((v_scale)* (self.max_g - self.min_g) + self.min_g),self.min_g,self.max_g)
 
-        return r_val*65536 + g_val*256 + 0 
+        return r_val*65536 + g_val*256 + 0
 
     def clamp(self,n, minn, maxn):
         return max(min(maxn, n), minn)
@@ -41,12 +41,12 @@ class rgb_limiter():
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
 import sys
-import socket  
-hostname = socket.gethostname()    
+import socket
+hostname = socket.gethostname()
 
 #Determine broker or not
-#broker_address = socket.gethostbyname(hostname) 
-broker_address = "10.0.0.33"   
+#broker_address = socket.gethostbyname(hostname)
+broker_address = "10.0.0.33"
 broker_port = 1883
 
 client_name = 'EPEVER Client'
@@ -61,7 +61,7 @@ mqtt_connected_flag = False
 
 def connect_to_broker(client,broker_address):
     try:
-        client.connect(broker_address)               #connect to broker 
+        client.connect(broker_address)               #connect to broker
 
     #If the broker connection has a timeout, try again. If wanting to run the cart without mqtt connection to the rail, comment out the recursive call
     except TimeoutError:
@@ -96,7 +96,7 @@ def on_disconnect(client, userdata, rc): #TODO lastwill and logging.
 
 class mqtt_manager:
     def __init__(self):
-        self.mqtt_client = mqtt.Client('Rpi_Vulcan')            # create new instance 
+        self.mqtt_client = mqtt.Client('Rpi_Vulcan')            # create new instance
         self.mqtt_client.on_connect=on_connect                  # bind call back function for connecting
         self.mqtt_client.on_disconnect = on_disconnect          # bind call back function for connecting
         self.mqtt_client.on_message = on_message
@@ -104,16 +104,16 @@ class mqtt_manager:
 
         self.mqtt_client.loop_start()
         print("Starting Loop")
-        
 
 
-        #Try connecting until the broker is on 
+
+        #Try connecting until the broker is on
 
         try:
             print("Connecting Vulcan to MQTT Network...")
             connect_to_broker(self.mqtt_client,broker_address)
             print("Success. Connected to broker ",broker_address)
-            
+
 
         except ConnectionRefusedError:
             print ("Client is not able to find broker")
@@ -145,13 +145,13 @@ def on_message(client, userdata, msg):
                     solar_client.write_load_state(0)
                 else:
                     print("Unknown Load State Request of",action_name)
-                
+
                 #print("MSG Parse Success. Rail Estop:",rail_estop_button)
             else:
                 print("Error. on_message unknown action_name of ",action_name)
         else:
             print("Error. on_message hasn't acted upon ",topic,"->",message_str)
-    except: 
+    except:
         print("Error: Uncaptured error in on_message.")
         print(sys.exc_info())
     else:
@@ -166,92 +166,96 @@ log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 
-solar_client = EPsolarTracerClientExtended({  'port':port_name,
-                                        'default_load_state':0})
-solar_client.connect()
+with  EPsolarTracerClientExtended(port = PORT_NAME,
+                                        default_load_state = 0) as solar_client:
 
-#m = mqtt_manager()
-#r = rgb_limiter()
 
-response = solar_client.read_device_info()
-while True:
+    m = mqtt_manager()
+    r = rgb_limiter()
+
+
+    time.sleep(1)
+    response = solar_client.read_device_info()
+    time.sleep(2)
     try:
-        #print("Manufacturer:", repr(response.information[0]))
-        #print("Model:", repr(response.information[1]))
-        #print("Version:", repr(response.information[2]))
+        print("Manufacturer:", repr(response.information[0]))
+        print("Model:", repr(response.information[1]))
+        print("Version:", repr(response.information[2]))
+        time.sleep(2)
         print("")
         print("Battery:")
         print(solar_client.read_input("Battery SOC"))  # Momentary Percentage of Battery's remaining capacity
-        break
-    except:
-        time.sleep(1)
-
-    
+    except AttributeError:
+        print("No valid device info right now...")
 
 
 
-publish_topics = {
-    "solar_voltage" : {
-        "topic":"solar_data/solar_voltage",
-        "register" : "Charging equipment input voltage"
-    },
-    "solar_current": {
-        "topic":"solar_data/solar_voltage",
-        "register" : "Charging equipment input current"
-    },
-    "solar_power" : {
-        "topic":"solar_data/solar_voltage",
-        "register" : "Charging equipment input power"
-    },
-    "battery_voltage" : {
-        "topic":"solar_data/battery_voltage",
-        "register" : "Charging equipment output voltage"
-    },
-    "battery_current" : {
-        "topic":"solar_data/battery_current",
-        "register" : "Charging equipment output current"
-    },
-    "battery_power" : {
-        "topic":"solar_data/battery_power",
-        "register" : "Charging equipment output power"
-    },
-    "load_voltage" : {
-        "topic":"solar_data/load_voltage",
-        "register" : "Discharging equipment output voltage"
-    },
-    "load_current" : {
-        "topic":"solar_data/load_current",
-        "register" : "Discharging equipment output current"
-    },
-    "load_power" : {
-        "topic":"solar_data/load_power",
-        "register" : "Discharging equipment output power"
-    },
-}
 
 
-while True:
-    
-    try:
+    publish_topics = {
+        "solar_voltage" : {
+            "topic":"solar_data/solar_voltage",
+            "register" : "Charging equipment input voltage"
+        },
+        "solar_current": {
+            "topic":"solar_data/solar_voltage",
+            "register" : "Charging equipment input current"
+        },
+        "solar_power" : {
+            "topic":"solar_data/solar_voltage",
+            "register" : "Charging equipment input power"
+        },
+        "battery_voltage" : {
+            "topic":"solar_data/battery_voltage",
+            "register" : "Charging equipment output voltage"
+        },
+        "battery_current" : {
+            "topic":"solar_data/battery_current",
+            "register" : "Charging equipment output current"
+        },
+        "battery_power" : {
+            "topic":"solar_data/battery_power",
+            "register" : "Charging equipment output power"
+        },
+        "load_voltage" : {
+            "topic":"solar_data/load_voltage",
+            "register" : "Discharging equipment output voltage"
+        },
+        "load_current" : {
+            "topic":"solar_data/load_current",
+            "register" : "Discharging equipment output current"
+        },
+        "load_power" : {
+            "topic":"solar_data/load_power",
+            "register" : "Discharging equipment output power"
+        },
+    }
+
+
+    while True:
+
+
         for pub_topic in publish_topics:
-            print(solar_client.read_input(publish_topics[pub_topic]["register"]).value)
-            #m.publish_mqtt(publish_topics[pub_topic]["topic"], solar_client.read_input(publish_topics[pub_topic]["register"]).value)
-            # m.publish_mqtt('solar_data/solar_voltage'   ,solar_client.read_input("Charging equipment input voltage").value)  # Momentary Voltage of PV-Generator
-            # m.publish_mqtt('solar_data/solar_current'   ,solar_client.read_input("Charging equipment input current").value)  # Momentary Current of PV-Generator
-            # m.publish_mqtt('solar_data/solar_power'     ,solar_client.read_input("Charging equipment input power").value)  # Momentary Power of PV-Generator
-            # m.publish_mqtt('solar_data/battery_voltage' ,solar_client.read_input("Charging equipment output voltage").value)  # Momentary Voltage of Battery-Output
-            # m.publish_mqtt('solar_data/battery_current' ,solar_client.read_input("Charging equipment output current").value)  # Momentary Current of Battery-Output
-            # m.publish_mqtt('solar_data/battery_power'   ,solar_client.read_input("Charging equipment output power").value)  # Momentary Power of Battery-Output
-            # m.publish_mqtt('solar_data/load_voltage'    ,solar_client.read_input("Discharging equipment output voltage").value)  # Momentary Voltage of LOAD-Output
-            # m.publish_mqtt('solar_data/load_current'    ,solar_client.read_input("Discharging equipment output current").value)  # Momentary Current of LOAD-Output
-            # m.publish_mqtt('solar_data/load_power'      ,solar_client.read_input("Discharging equipment output power").value)  # Momentary Power of LOAD-Output
-        
+            print("Scanning TOpic:",pub_topic)
+            v = solar_client.read_input(publish_topics[pub_topic]["register"]).value
+            if v is not None:
+                publish_topics[pub_topic]["value"] = v
+                m.publish_mqtt(publish_topics[pub_topic]["topic"],v)
+            time.sleep(0.25)
+
+        for pub_topic in publish_topics:
+            print(pub_topic,":",publish_topics[pub_topic].get("value"))
+
+
         # # Net Power
-        # try:
-        #     net_power = solar_client.read_input("Charging equipment input power").value - solar_client.read_input("Charging equipment output power").value - solar_client.read_input("Discharging equipment output power").value
-        #     m.publish_mqtt('solar_data/net_power'       ,net_power)
-        # except:
-        #     print("Error net power calc")
+
+        #net_power = solar_client.read_input("Charging equipment input power").value - solar_client.read_input("Charging equipment output power").value - solar_client.read_input("Discharging equipment output power").value
+        try:
+            net_power = publish_topics["solar_power"]["value"] - publish_topics["battery_power"]["value"] - publish_topics["load_power"]["value"]
+            m.publish_mqtt('solar_data/net_power'       ,net_power)
+        except KeyError as err:
+            print(err)
+
 
         # # Low Battery
         # cur_voltage = solar_client.read_input("Charging equipment output voltage").value
@@ -263,11 +267,3 @@ while True:
         #         m.publish_mqtt('solar_data/battery_alert'   ,r.get_rgb(cur_voltage))
         # except TypeError:
         #     pass
-
-
-        time.sleep(5)
-    except KeyboardInterrupt:
-        solar_client.close()
-        break
-
-solar_client.close()

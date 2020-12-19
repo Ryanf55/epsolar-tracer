@@ -24,7 +24,7 @@ unitnum = 1
 # choose the serial client
 #client = ModbusClient(method='rtu', port='/dev/ttyXRUSB0', baudrate=115200, stopbits = 1, bytesize = 8, timeout=1)
 
-client = EPsolarTracerClient()
+client = EPsolarTracerClient(port='/dev/ttyUSB0')
 client.connect()
 
 request = ReadDeviceInformationRequest(unit=unitnum)

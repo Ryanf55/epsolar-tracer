@@ -3,7 +3,7 @@ import logging
 from pyepsolartracer.client import EPsolarTracerClientExtended,EPsolarTracerClient
 
 
-PORT_NAME = 'COM6'
+PORT_NAME = '/dev/ttyUSB0'
 
 
 # configure the client logging
@@ -24,4 +24,8 @@ SOLAR_CLIENT.connect()
 #r = rgb_limiter()
 
 response = SOLAR_CLIENT.read_device_info()
+
+print("RESP",response,"SDF")
 print(response.information)
+
+
