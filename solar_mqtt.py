@@ -12,10 +12,6 @@ from pyepsolartracer.client import EPsolarTracerClientExtended
 import time
 
 PORT_NAME = '/dev/ttyUSB0'
-<<<<<<< HEAD
-=======
-print("A")
->>>>>>> 9d631ca34d5fb61711bd400677cb2050701c983f
 
 #MQTT Color Maps
 class rgb_limiter():
@@ -87,7 +83,7 @@ def on_connect(client, userdata, flags, rc):    #todo if rc != 0
             print("Subbing to ",sub_topic_name,":",sub_topics[sub_topic_name])
             client.subscribe(sub_topics[sub_topic_name])
 
-        client.publish("connection/solar",0*65536+255*256+0)
+        client.publish("connection/solar",1)
         print(client_name,"is now connected to MQTT broker.")
 
         #TODO scan for clients to ensure the cart is connected to mqtt otherwise wait.
@@ -104,7 +100,7 @@ class mqtt_manager:
         self.mqtt_client.on_connect=on_connect                  # bind call back function for connecting
         self.mqtt_client.on_disconnect = on_disconnect          # bind call back function for connecting
         self.mqtt_client.on_message = on_message
-        self.mqtt_client.will_set("connection/solar", 255*65536+0*256+0,qos=1,retain=False) #green 0*65536+255*256+0
+        self.mqtt_client.will_set("connection/solar", 1,qos=1,retain=False) #green 0*65536+255*256+0
 
         self.mqtt_client.loop_start()
         print("Starting Loop")
@@ -114,7 +110,7 @@ class mqtt_manager:
         #Try connecting until the broker is on
 
         try:
-            print("Connecting Vulcan to MQTT Network...")
+            print("Connecting MQTT Network...")
             connect_to_broker(self.mqtt_client,broker_address)
             print("Success. Connected to broker ",broker_address)
 
@@ -135,32 +131,33 @@ class mqtt_manager:
 
 
 def on_message(client, userdata, msg):
-    global solar_client
-    try:
-        topic = msg.topic
-        message_str = str(msg.payload.decode("utf-8"))
-        print(topic,"->",message_str)
-        if topic.startswith("solar_commands/"): #TODO add a dictionary to move all these strings into it. Ex:"rail_sensors", "True",etc.
-            action_name = topic.split("solar_commands/")[1]
-            if action_name == "load":
-                if message_str == "1":
-                    solar_client.write_load_state(1)
-                elif message_str == "0":
-                    solar_client.write_load_state(0)
-                else:
-                    print("Unknown Load State Request of",action_name)
+    raise NotImplementedError
+    # global solar_client
+    # try:
+    #     topic = msg.topic
+    #     message_str = str(msg.payload.decode("utf-8"))
+    #     print(topic,"->",message_str)
+    #     if topic.startswith("solar_commands/"): #TODO add a dictionary to move all these strings into it. Ex:"rail_sensors", "True",etc.
+    #         action_name = topic.split("solar_commands/")[1]
+    #         if action_name == "load":
+    #             if message_str == "1":
+    #                 solar_client.write_load_state(1)
+    #             elif message_str == "0":
+    #                 solar_client.write_load_state(0)
+    #             else:
+    #                 print("Unknown Load State Request of",action_name)
 
-                #print("MSG Parse Success. Rail Estop:",rail_estop_button)
-            else:
-                print("Error. on_message unknown action_name of ",action_name)
-        else:
-            print("Error. on_message hasn't acted upon ",topic,"->",message_str)
-    except:
-        print("Error: Uncaptured error in on_message.")
-        print(sys.exc_info())
-    else:
-        #print("Message:",topic, " -> ",message_str)
-        pass
+    #             #print("MSG Parse Success. Rail Estop:",rail_estop_button)
+    #         else:
+    #             print("Error. on_message unknown action_name of ",action_name)
+    #     else:
+    #         print("Error. on_message hasn't acted upon ",topic,"->",message_str)
+    # except:
+    #     print("Error: Uncaptured error in on_message.")
+    #     print(sys.exc_info())
+    # else:
+    #     #print("Message:",topic, " -> ",message_str)
+    #     pass
 
 
 # configure the client logging
